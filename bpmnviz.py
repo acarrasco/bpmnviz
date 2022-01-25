@@ -5,6 +5,22 @@ import xml.etree.ElementTree as ET
 import argparse
 import graphviz
 import re
+import hashlib
+
+colors = [
+    'aquamarine',
+    'burlywood',
+    'coral',
+    'cyan',
+    'lightsteelblue',
+    'yellow',
+    'magenta',
+    'navajowhite',
+    'red',
+#    'royalblue',
+    'wheat',
+#    'whitesmoke',
+];
 
 def main():
     parser = argparse.ArgumentParser(description='Create diagrams from BPMN files')
@@ -24,6 +40,9 @@ def main():
     args.output.write(dot.source)
 
 def get_dot(bpmn, args):
+    remaining_colors = colors[:]
+    assigned_colors = {}
+
     graph = graphviz.graphs.Digraph()
     graph.graph_attr['splines'] = 'ortho'
     graph.graph_attr['overlap_scaling'] = '10000'
@@ -50,7 +69,13 @@ def get_dot(bpmn, args):
             implementation = element.attrib['implementation']
             match = re.match(args.service_task_regexp, implementation)
             (label,) = match and match.groups() or (implementation,)
-            graph.node(element.attrib['id'], label=label, shape='box', fontname=args.service_task_font_name)
+            (action, ) = re.match('^([a-zA-Z]+)', label).groups()
+            color = assigned_colors.get(action)
+            if not color:
+                i = hashlib.md5(action.encode('utf-8')).digest()[-1] % len(remaining_colors)
+                color = remaining_colors.pop(i)
+                assigned_colors[action] = color
+            graph.node(element.attrib['id'], label=label, shape='box', fontname=args.service_task_font_name, style='filled', fillcolor=color)
         elif element.tag.endswith('userTask'):
             graph.node(element.attrib['id'], label='User Task', fontname=args.wait_task_font_name)
         elif element.tag.endswith('receiveTask'):
