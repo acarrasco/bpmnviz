@@ -12,7 +12,7 @@ def main():
     parser.add_argument('--output', type=argparse.FileType('w'), default=sys.stdout, help='the ouput DOT file')
     parser.add_argument('--service-task-regexp', type=str, default=r'\$\{environment\.services\.(.*)\}', help='extract the relevant part from service task implementations')
     parser.add_argument('--condition-regexp', type=str, default=r'next\(null,(.*)\)', help='extract the relevant part from conditions')
-    parser.add_argument('--font-name', type=str, default='Ubuntu Mono')
+    parser.add_argument('--font-name', type=str, default='Arial')
 
     args = parser.parse_args()
 
@@ -23,7 +23,6 @@ def main():
 def get_dot(bpmn, args):
     graph = graphviz.graphs.Digraph()
     graph.graph_attr['splines'] = 'ortho'
-    #graph.graph_attr['overlap'] = 'prism'
     graph.graph_attr['overlap_scaling'] = '10000'
     graph.graph_attr['overlap'] = 'scalexy'
     graph.graph_attr['fontname'] = args.font_name
@@ -44,12 +43,12 @@ def get_dot(bpmn, args):
             else:
                 label = element.attrib['id'] in is_default_branch and 'default' or ''
 
-            graph.edge(element.attrib['sourceRef'], element.attrib['targetRef'], xlabel=label)
+            graph.edge(element.attrib['sourceRef'], element.attrib['targetRef'], xlabel=label, fontname=args.font_name)
         elif element.tag.endswith('serviceTask'):
             implementation = element.attrib['implementation']
             match = re.match(args.service_task_regexp, implementation)
             (label,) = match and match.groups() or (implementation,)
-            graph.node(element.attrib['id'], label=label, shape='box')
+            graph.node(element.attrib['id'], label=label, shape='box', fontname=args.font_name)
         elif element.tag.endswith('userTask'):
             graph.node(element.attrib['id'], label='User Task')
         elif element.tag.endswith('receiveTask'):
