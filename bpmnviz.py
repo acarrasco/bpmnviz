@@ -12,7 +12,10 @@ def main():
     parser.add_argument('--output', type=argparse.FileType('w'), default=sys.stdout, help='the ouput DOT file')
     parser.add_argument('--service-task-regexp', type=str, default=r'\$\{environment\.services\.(.*)\}', help='extract the relevant part from service task implementations')
     parser.add_argument('--condition-regexp', type=str, default=r'next\(null,(.*)\)', help='extract the relevant part from conditions')
-    parser.add_argument('--font-name', type=str, default='Arial')
+    parser.add_argument('--service-task-font-name', type=str, default='Courier')
+    parser.add_argument('--sequence-font-name', type=str, default='Courier')
+    parser.add_argument('--wait-task-font-name', type=str, default='Arial')
+
 
     args = parser.parse_args()
 
@@ -25,7 +28,6 @@ def get_dot(bpmn, args):
     graph.graph_attr['splines'] = 'ortho'
     graph.graph_attr['overlap_scaling'] = '10000'
     graph.graph_attr['overlap'] = 'scalexy'
-    graph.graph_attr['fontname'] = args.font_name
     is_default_branch = set()
     for element in bpmn.iter():
         if element.tag.endswith('Task'):
@@ -43,16 +45,18 @@ def get_dot(bpmn, args):
             else:
                 label = element.attrib['id'] in is_default_branch and 'default' or ''
 
-            graph.edge(element.attrib['sourceRef'], element.attrib['targetRef'], xlabel=label, fontname=args.font_name)
+            graph.edge(element.attrib['sourceRef'], element.attrib['targetRef'], xlabel=label, fontname=args.sequence_font_name)
         elif element.tag.endswith('serviceTask'):
             implementation = element.attrib['implementation']
             match = re.match(args.service_task_regexp, implementation)
             (label,) = match and match.groups() or (implementation,)
-            graph.node(element.attrib['id'], label=label, shape='box', fontname=args.font_name)
+            graph.node(element.attrib['id'], label=label, shape='box', fontname=args.service_task_font_name)
         elif element.tag.endswith('userTask'):
-            graph.node(element.attrib['id'], label='User Task')
+            graph.node(element.attrib['id'], label='User Task', fontname=args.wait_task_font_name)
         elif element.tag.endswith('receiveTask'):
-            graph.node(element.attrib['id'], label='Receive Task')
+            graph.node(element.attrib['id'], label='Receive Task', fontname=args.wait_task_font_name)
+        elif element.tag.endswith('Event'):
+            graph.node(element.attrib['id'], fontname=args.wait_task_font_name)
 
     return graph
 
